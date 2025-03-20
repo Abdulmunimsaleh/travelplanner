@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+python-dotenv
+phi-agent
+phi-model-groq
+phi-tools-serpapi
+pydantic
