@@ -15,7 +15,7 @@ app = FastAPI(
 )
 
 # Configure your API keys directly in the code
-GROQ_API_KEY = "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"
+GROQ_API_KEY = "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"
 SERP_API_KEY = "ffd21e065fb0e3817b366c3f0fad1026f132969bef6eba499b2774aab2e03920"
 
 # Initialize the travel agent
