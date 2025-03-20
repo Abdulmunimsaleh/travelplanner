@@ -1,43 +1,25 @@
 import os
 from fastapi import FastAPI, HTTPException, Query
 from typing import List, Optional
-from phi.agent import Agent
-from phi.model.groq import Groq
-from phi.tools.serpapi_tools import SerpApiTools
+import google.generativeai as genai
 import uvicorn
-from dotenv import load_dotenv
 
 # Initialize FastAPI app
 app = FastAPI(
     title="AI Travel Planner API",
-    description="A FastAPI application for AI-powered travel planning",
+    description="A FastAPI application for AI-powered travel planning using Google Gemini",
     version="1.0.0"
 )
 
-# Configure your API keys directly in the code
-GROQ_API_KEY = "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"
-SERP_API_KEY = "b4ce2e11620fb74a506eb2107dd59d5d3a6dbf2d1dd6414df787ef14dc3772f5"
+# Configure your Gemini API key directly in the code
+GEMINI_API_KEY = "AIzaSyCpugWq859UTT5vaOe01EuONzFweYT2uUY"
 
-# Initialize the travel agent
-def create_travel_agent():
-    # Set API keys
-    os.environ["GROQ_API_KEY"] = GROQ_API_KEY
-    os.environ["SERP_API_KEY"] = SERP_API_KEY
-    
-    # Initialize travel agent
-    return Agent(
-        name="Travel Planner",
-        model=Groq(id="llama-3.3-70b-versatile"),
-        tools=[SerpApiTools()],
-        instructions=[
-            "You are a travel planning assistant using Groq Llama.",
-            "Help users plan their trips by researching destinations, finding attractions, suggesting accommodations, and providing transportation options.",
-            "Give me relevant live Links of each places and hotels you provide by searching on internet (It's important)",
-            "Always verify information is current before making recommendations."
-        ],
-        show_tool_calls=True,
-        markdown=True
-    )
+# Configure Gemini
+genai.configure(api_key=GEMINI_API_KEY)
+
+# Initialize Gemini model
+def get_gemini_model():
+    return genai.GenerativeModel('gemini-1.5-pro')
 
 # Routes
 @app.get("/generate_plan")
@@ -51,8 +33,8 @@ async def generate_plan(
         # Parse travel styles
         styles_list = travel_styles.split(',')
         
-        # Create travel agent
-        travel_agent = create_travel_agent()
+        # Get Gemini model
+        model = get_gemini_model()
         
         # Generate travel plan
         prompt = f"""Create a comprehensive travel plan for {destination} for {duration} days.
@@ -91,18 +73,14 @@ Please provide a detailed itinerary that includes:
 - Breakdown of expenses
 - Money-saving tips
 
-Please provide source and relevant links without fail.
+Please provide source and relevant links for accommodations, attractions, and restaurants.
 
 Format the response in a clear, easy-to-read markdown format with headings and bullet points.
         """
         
-        response = travel_agent.run(prompt)
+        response = model.generate_content(prompt)
         
-        if hasattr(response, 'content'):
-            clean_response = response.content.replace('∣', '|').replace('\n\n\n', '\n\n')
-            return {"status": "success", "travel_plan": clean_response}
-        else:
-            return {"status": "success", "travel_plan": str(response)}
+        return {"status": "success", "travel_plan": response.text}
             
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating travel plan: {str(e)}")
@@ -114,8 +92,8 @@ async def ask_question(
     travel_plan: str
 ):
     try:
-        # Create travel agent
-        travel_agent = create_travel_agent()
+        # Get Gemini model
+        model = get_gemini_model()
         
         # Process question
         context_question = f"""
@@ -127,12 +105,9 @@ async def ask_question(
         Provide a focused, concise answer that relates to the existing travel plan if possible.
         """
         
-        response = travel_agent.run(context_question)
+        response = model.generate_content(context_question)
         
-        if hasattr(response, 'content'):
-            return {"status": "success", "answer": response.content}
-        else:
-            return {"status": "success", "answer": str(response)}
+        return {"status": "success", "answer": response.text}
             
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error getting answer: {str(e)}")
