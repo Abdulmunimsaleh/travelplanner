@@ -36,49 +36,51 @@ async def generate_plan(
         # Get Gemini model
         model = get_gemini_model()
         
-        # Generate travel plan
-        prompt = f"""Create a comprehensive travel plan for {destination} for {duration} days.
+        # Generate concise travel plan
+        prompt = f"""Create a BRIEF travel plan for {destination} for {duration} days.
 
 Travel Preferences:
 - Budget Level: {budget}
 - Travel Styles: {', '.join(styles_list)}
 
-Please provide a detailed itinerary that includes:
+Please provide a CONCISE itinerary with only the most essential information:
 
-1. 🌞 Best Time to Visit
-- Seasonal highlights
-- Weather considerations
+1. 🌞 Best Time to Visit (2-3 bullet points maximum)
+   - Only key seasonal information
+   - Main weather considerations
 
-2. 🏨 Accommodation Recommendations
-- {budget} range hotels/stays
-- Locations and proximity to attractions
+2. 🏨 Top Accommodations (2-3 options maximum)
+   - Only the best {budget} options
+   - Very brief descriptions
 
-3. 🗺️ Day-by-Day Itinerary
-- Detailed daily activities
-- Must-visit attractions
-- Local experiences aligned with travel styles
+3. 🗺️ Day-by-Day Highlights
+   - Maximum 3 key activities per day
+   - Only must-see attractions
+   - No detailed descriptions
 
-4. 🍽️ Culinary Experiences
-- Local cuisine highlights
-- Recommended restaurants
-- Food experiences matching travel style
+4. 🍽️ Essential Food Experiences (3-4 total)
+   - 1-2 local dishes to try
+   - 1-2 restaurant recommendations
 
-5. 💡 Practical Travel Tips
-- Local transportation options
-- Cultural etiquette
-- Safety recommendations
-- Estimated daily budget breakdown
+5. 💡 Key Travel Tips (3-4 bullet points maximum)
+   - Only critical transportation and safety info
+   - Brief budget estimates
 
-6. 💰 Estimated Total Trip Cost
-- Breakdown of expenses
-- Money-saving tips
-
-Please provide source and relevant links for accommodations, attractions, and restaurants.
-
-Format the response in a clear, easy-to-read markdown format with headings and bullet points.
+Keep the ENTIRE response under 500 words. Focus only on the absolute essentials a traveler would need.
+Use concise bullet points throughout and avoid lengthy explanations.
         """
         
-        response = model.generate_content(prompt)
+        # Set parameters to encourage brevity
+        generation_config = {
+            "temperature": 0.2,  # Lower temperature for more focused responses
+            "max_output_tokens": 2048,  # Limit token count
+        }
+        
+        # Generate the response with the specific configuration
+        response = model.generate_content(
+            prompt,
+            generation_config=generation_config
+        )
         
         return {"status": "success", "travel_plan": response.text}
             
@@ -95,17 +97,28 @@ async def ask_question(
         # Get Gemini model
         model = get_gemini_model()
         
-        # Process question
+        # Process question with brevity instructions
         context_question = f"""
-        I have a travel plan for {destination}. Here's the existing plan:
-        {travel_plan}
-
-        Now, please answer this specific question: {question}
+        I have a travel plan for {destination}.
         
-        Provide a focused, concise answer that relates to the existing travel plan if possible.
+        Please answer this question VERY BRIEFLY (maximum 2-3 sentences): {question}
+        
+        If needed, reference this existing plan (but don't repeat all of it):
+        {travel_plan}
+        
+        Provide ONLY the essential information - no explanations, just facts.
         """
         
-        response = model.generate_content(context_question)
+        # Set parameters to encourage brevity
+        generation_config = {
+            "temperature": 0.2,
+            "max_output_tokens": 512,
+        }
+        
+        response = model.generate_content(
+            context_question,
+            generation_config=generation_config
+        )
         
         return {"status": "success", "answer": response.text}
             
@@ -115,3 +128,6 @@ async def ask_question(
 # Run the application
 if __name__ == "__main__":
     uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
+
+    
+
