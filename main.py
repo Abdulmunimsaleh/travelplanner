@@ -36,44 +36,30 @@ async def generate_plan(
         # Get Gemini model
         model = get_gemini_model()
         
-        # Generate concise travel plan
-        prompt = f"""Create a BRIEF travel plan for {destination} for {duration} days.
+        # Generate ultra-concise travel plan
+        prompt = f"""Create an EXTREMELY BRIEF travel plan for {destination} for {duration} days.
 
 Travel Preferences:
-- Budget Level: {budget}
-- Travel Styles: {', '.join(styles_list)}
+- Budget: {budget}
+- Styles: {', '.join(styles_list)}
 
-Please provide a CONCISE itinerary with only the most essential information:
+FORMAT YOUR RESPONSE AS FOLLOWS - USE ONLY ONE LINE PER SECTION:
 
-1. 🌞 Best Time to Visit (2-3 bullet points maximum)
-   - Only key seasonal information
-   - Main weather considerations
+WHEN: [only list best months, max 5 words]
+STAY: [name 1-2 top {budget} accommodations only]
+DO: [list only 1 must-see activity per day, numbered by day]
+EAT: [name 1-2 dishes and 1 restaurant only]
+TIPS: [only 2 critical tips - transport and budget]
 
-2. 🏨 Top Accommodations (2-3 options maximum)
-   - Only the best {budget} options
-   - Very brief descriptions
-
-3. 🗺️ Day-by-Day Highlights
-   - Maximum 3 key activities per day
-   - Only must-see attractions
-   - No detailed descriptions
-
-4. 🍽️ Essential Food Experiences (3-4 total)
-   - 1-2 local dishes to try
-   - 1-2 restaurant recommendations
-
-5. 💡 Key Travel Tips (3-4 bullet points maximum)
-   - Only critical transportation and safety info
-   - Brief budget estimates
-
-Keep the ENTIRE response under 500 words. Focus only on the absolute essentials a traveler would need.
-Use concise bullet points throughout and avoid lengthy explanations.
-        """
+TOTAL LENGTH MUST BE UNDER 200 WORDS. Use extreme brevity - single words or short phrases only.
+NO explanations, NO descriptions, NO links, NO introductions or conclusions.
+"""
         
-        # Set parameters to encourage brevity
+        # Set parameters to enforce extreme brevity
         generation_config = {
-            "temperature": 0.2,  # Lower temperature for more focused responses
-            "max_output_tokens": 2048,  # Limit token count
+            "temperature": 0.1,  # Very low temperature for predictable responses
+            "max_output_tokens": 512,  # Very limited token count
+            "top_p": 0.95,
         }
         
         # Generate the response with the specific configuration
@@ -97,22 +83,20 @@ async def ask_question(
         # Get Gemini model
         model = get_gemini_model()
         
-        # Process question with brevity instructions
+        # Process question with extreme brevity instructions
         context_question = f"""
-        I have a travel plan for {destination}.
-        
-        Please answer this question VERY BRIEFLY (maximum 2-3 sentences): {question}
-        
-        If needed, reference this existing plan (but don't repeat all of it):
+        Travel plan for {destination}:
         {travel_plan}
         
-        Provide ONLY the essential information - no explanations, just facts.
+        Question: {question}
+        
+        Answer in ONE SENTENCE ONLY. Maximum 15 words. Just facts, no explanations.
         """
         
-        # Set parameters to encourage brevity
+        # Set parameters to enforce extreme brevity
         generation_config = {
-            "temperature": 0.2,
-            "max_output_tokens": 512,
+            "temperature": 0.1,
+            "max_output_tokens": 128,
         }
         
         response = model.generate_content(
@@ -128,6 +112,3 @@ async def ask_question(
 # Run the application
 if __name__ == "__main__":
     uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
-
-    
-
